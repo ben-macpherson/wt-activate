@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+die() { printf 'wt-activate: error: %s\n' "$*" >&2; exit 1; }
+info() { printf '%s\n' "$*"; }
+
+# ── locate git context ────────────────────────────────────────────────────────
+
+if ! git rev-parse --git-dir &>/dev/null; then
+  die "not inside a git repository"
+fi
+
+WORKTREE_DIR="$(git rev-parse --show-toplevel 2>/dev/null)" \
+  || die "could not determine worktree root (are you inside a bare repo's git dir?)"
+
+GIT_COMMON="$(git rev-parse --git-common-dir)" \
+  || die "could not determine git common dir"
+
+# ── read config ───────────────────────────────────────────────────────────────
+
+CONFIG_FILE="${GIT_COMMON}/wt-activate"
+
+[[ -f "$CONFIG_FILE" ]] \
+  || die "no config found at ${CONFIG_FILE} — run 'wt-activate-init' to set one up"
+
+ACTIVE_LINK=""
+
+while IFS='=' read -r key value || [[ -n "$key" ]]; do
+  # Strip leading whitespace from key
+  key="${key#"${key%%[![:space:]]*}"}"
+  # Skip comments and blank lines
+  [[ "$key" == "#"* || -z "$key" ]] && continue
+  # Strip trailing whitespace from key
+  key="${key%"${key##*[![:space:]]}"}"
+  # Strip leading/trailing whitespace from value
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  # Strip optional surrounding quotes
+  value="${value#\'}" ; value="${value%\'}"
+  value="${value#\"}" ; value="${value%\"}"
+
+  if [[ "$key" == "ACTIVE_LINK" ]]; then
+    ACTIVE_LINK="$value"
+  fi
+done < "$CONFIG_FILE"
+
+[[ -n "$ACTIVE_LINK" ]] \
+  || die "ACTIVE_LINK is not set in ${CONFIG_FILE}"
+
+# Expand ~ to $HOME
+ACTIVE_LINK="${ACTIVE_LINK/#\~/$HOME}"
+
+# ── validate ──────────────────────────────────────────────────────────────────
+
+LINK_PARENT="$(dirname "$ACTIVE_LINK")"
+[[ -d "$LINK_PARENT" ]] \
+  || die "parent directory of ACTIVE_LINK does not exist: ${LINK_PARENT}"
+
+if [[ -e "$ACTIVE_LINK" && ! -L "$ACTIVE_LINK" ]]; then
+  die "${ACTIVE_LINK} exists and is not a symlink — refusing to overwrite"
+fi
+
+# ── update symlink ────────────────────────────────────────────────────────────
+
+PREV=""
+if [[ -L "$ACTIVE_LINK" ]]; then
+  PREV="$(readlink "$ACTIVE_LINK")"
+fi
+
+ln -sfn "$WORKTREE_DIR" "$ACTIVE_LINK"
+
+# ── report ────────────────────────────────────────────────────────────────────
+
+if [[ -n "$PREV" && "$PREV" != "$WORKTREE_DIR" ]]; then
+  info "  was: ${PREV}"
+fi
+info "  now: ${WORKTREE_DIR}"
+info "  via: ${ACTIVE_LINK}"
+info "wt-activate: active worktree updated"
