@@ -9,13 +9,13 @@ The switch is **intentionally manual**. Your terminal can be in one worktree whi
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/benmacpherson/wt-activate/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ben-macpherson/wt-activate/main/install.sh | bash
 ```
 
 This installs `wt-activate` and `wt-activate-init` to `/usr/local/bin`. To install elsewhere:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/benmacpherson/wt-activate/main/install.sh | bash -s -- ~/.local/bin
+curl -fsSL https://raw.githubusercontent.com/ben-macpherson/wt-activate/main/install.sh | bash -s -- ~/.local/bin
 ```
 
 **Manual install:** copy `bin/wt-activate` and `bin/wt-activate-init` anywhere on your `$PATH` and make them executable.
