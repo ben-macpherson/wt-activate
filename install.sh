@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="https://raw.githubusercontent.com/benmacpherson/wt-activate/main/bin"
+REPO="https://raw.githubusercontent.com/ben-macpherson/wt-activate/main/bin"
 INSTALL_DIR="${1:-/usr/local/bin}"
 
 die() { printf 'install: error: %s\n' "$*" >&2; exit 1; }
@@ -11,7 +11,9 @@ if [[ ! -d "$INSTALL_DIR" ]]; then
 fi
 
 if [[ ! -w "$INSTALL_DIR" ]]; then
-  die "cannot write to ${INSTALL_DIR}. Try: bash install.sh ~/.local/bin"
+  die "cannot write to ${INSTALL_DIR}. Try one of:
+  sudo bash install.sh
+  bash install.sh ~/.local/bin"
 fi
 
 for script in wt-activate wt-activate-init; do
